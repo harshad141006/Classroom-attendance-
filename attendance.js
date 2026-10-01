@@ -5,10 +5,12 @@ const ATTENDANCE_PREFIX = 'attendance_';
 // State
 let students = [];
 let currentDate = '';
+let currentClass = 'Class 1';
 let currentAttendance = {};
 let selectedStudent = null;
 
 // DOM elements
+const classSelect = document.getElementById('classSelect');
 const attendanceDateInput = document.getElementById('attendanceDate');
 const attendanceGrid = document.getElementById('attendanceGrid');
 const noStudents = document.getElementById('noStudents');
@@ -26,11 +28,13 @@ const externalOdCount = document.getElementById('externalOdCount');
 
 // Initialize app
 function init() {
+    migrateData();
     loadStudents();
     setTodayDate();
     attachEventListeners();
     
-    if (students.length === 0) {
+    const classFilteredStudents = getClassFilteredStudents();
+    if (classFilteredStudents.length === 0) {
         showNoStudents();
     } else {
         loadAttendance();
@@ -38,6 +42,53 @@ function init() {
         updateSummary();
         updateStatusLists();
     }
+}
+
+// Migrate existing data to support class management
+function migrateData() {
+    // 1. Migrate student data to add class field
+    const studentsStored = localStorage.getItem(STUDENTS_KEY);
+    if (studentsStored) {
+        try {
+            let studentsList = JSON.parse(studentsStored);
+            let needsSave = false;
+            
+            studentsList = studentsList.map(student => {
+                if (!student.class) {
+                    needsSave = true;
+                    return { ...student, class: 'Class 1' };
+                }
+                return student;
+            });
+            
+            if (needsSave) {
+                localStorage.setItem(STUDENTS_KEY, JSON.stringify(studentsList));
+            }
+        } catch (e) {
+            // Invalid data, skip migration
+        }
+    }
+    
+    // 2. Migrate attendance data from old format to class-specific format
+    const allKeys = Object.keys(localStorage);
+    const oldAttendancePattern = /^attendance_(\d{4}-\d{2}-\d{2})$/;
+    
+    allKeys.forEach(key => {
+        const match = key.match(oldAttendancePattern);
+        if (match) {
+            const date = match[1];
+            const newKey = `attendance_${date}_Class-1`;
+            const value = localStorage.getItem(key);
+            
+            // Only migrate if new key doesn't exist
+            if (!localStorage.getItem(newKey)) {
+                localStorage.setItem(newKey, value);
+            }
+            
+            // Remove old key
+            localStorage.removeItem(key);
+        }
+    });
 }
 
 // Load students from localStorage
@@ -52,6 +103,11 @@ function loadStudents() {
     }
 }
 
+// Get students filtered by current class
+function getClassFilteredStudents() {
+    return students.filter(student => student.class === currentClass);
+}
+
 // Set today's date as default
 function setTodayDate() {
     const today = new Date();
@@ -62,6 +118,7 @@ function setTodayDate() {
 
 // Attach event listeners
 function attachEventListeners() {
+    classSelect.addEventListener('change', handleClassChange);
     attendanceDateInput.addEventListener('change', handleDateChange);
     
     // Status button clicks
@@ -77,6 +134,21 @@ function attachEventListeners() {
     });
 }
 
+// Handle class change
+function handleClassChange(e) {
+    currentClass = e.target.value;
+    const classFilteredStudents = getClassFilteredStudents();
+    
+    if (classFilteredStudents.length === 0) {
+        showNoStudents();
+    } else {
+        loadAttendance();
+        renderAttendance();
+        updateSummary();
+        updateStatusLists();
+    }
+}
+
 // Handle date change
 function handleDateChange(e) {
     currentDate = e.target.value;
@@ -86,9 +158,9 @@ function handleDateChange(e) {
     updateStatusLists();
 }
 
-// Load attendance for current date
+// Load attendance for current date and class
 function loadAttendance() {
-    const storageKey = ATTENDANCE_PREFIX + currentDate;
+    const storageKey = ATTENDANCE_PREFIX + currentDate + '_' + currentClass.replace(' ', '-');
     const stored = localStorage.getItem(storageKey);
     
     if (stored) {
@@ -110,7 +182,8 @@ function loadAttendance() {
 // Initialize attendance with all students PRESENT
 function initializeAttendance() {
     currentAttendance = {};
-    students.forEach(student => {
+    const classFilteredStudents = getClassFilteredStudents();
+    classFilteredStudents.forEach(student => {
         currentAttendance[student.rollNumber] = 'PRESENT';
     });
     saveAttendance();
@@ -118,7 +191,7 @@ function initializeAttendance() {
 
 // Save attendance to localStorage
 function saveAttendance() {
-    const storageKey = ATTENDANCE_PREFIX + currentDate;
+    const storageKey = ATTENDANCE_PREFIX + currentDate + '_' + currentClass.replace(' ', '-');
     // Convert object to array for storage
     const attendanceArray = Object.keys(currentAttendance).map(rollNumber => ({
         rollNumber,
@@ -129,14 +202,16 @@ function saveAttendance() {
 
 // Render attendance cards
 function renderAttendance() {
-    if (students.length === 0) {
+    const classFilteredStudents = getClassFilteredStudents();
+    
+    if (classFilteredStudents.length === 0) {
         showNoStudents();
         return;
     }
     
     noStudents.classList.add('hidden');
     
-    attendanceGrid.innerHTML = students.map(student => {
+    attendanceGrid.innerHTML = classFilteredStudents.map(student => {
         const status = currentAttendance[student.rollNumber] || 'PRESENT';
         const statusClass = status.replace(' ', '-');
         
@@ -204,12 +279,31 @@ function handleStatusSelect(e) {
 
 // Update summary counts
 function updateSummary() {
-    if (students.length === 0) {
+    const classFilteredStudents = getClassFilteredStudents();
+    
+    if (classFilteredStudents.length === 0) {
         totalCount.textContent = '0';
         presentCount.textContent = '0';
         absentCount.textContent = '0';
         internalOdCount.textContent = '0';
         externalOdCount.textContent = '0';
+        
+        // Update banner
+        const bannerDateEl = document.getElementById('bannerDate');
+        const bannerClassEl = document.getElementById('bannerClass');
+        const bannerTotalEl = document.getElementById('bannerTotal');
+        const bannerPresentEl = document.getElementById('bannerPresent');
+        const bannerAbsentEl = document.getElementById('bannerAbsent');
+        const bannerInternalOdEl = document.getElementById('bannerInternalOd');
+        const bannerExternalOdEl = document.getElementById('bannerExternalOd');
+
+        if (bannerDateEl) bannerDateEl.textContent = currentDate || '--';
+        if (bannerClassEl) bannerClassEl.textContent = currentClass.replace('Class ', '');
+        if (bannerTotalEl) bannerTotalEl.textContent = '0';
+        if (bannerPresentEl) bannerPresentEl.textContent = '0';
+        if (bannerAbsentEl) bannerAbsentEl.textContent = '0';
+        if (bannerInternalOdEl) bannerInternalOdEl.textContent = '0';
+        if (bannerExternalOdEl) bannerExternalOdEl.textContent = '0';
         return;
     }
     
@@ -218,7 +312,7 @@ function updateSummary() {
     let internalOd = 0;
     let externalOd = 0;
     
-    students.forEach(student => {
+    classFilteredStudents.forEach(student => {
         const status = currentAttendance[student.rollNumber] || 'PRESENT';
         
         switch (status) {
@@ -237,7 +331,7 @@ function updateSummary() {
         }
     });
     
-    totalCount.textContent = students.length;
+    totalCount.textContent = classFilteredStudents.length;
     presentCount.textContent = present;
     absentCount.textContent = absent;
     internalOdCount.textContent = internalOd;
@@ -245,6 +339,7 @@ function updateSummary() {
     
     // Also update the banner
     const bannerDateEl = document.getElementById('bannerDate');
+    const bannerClassEl = document.getElementById('bannerClass');
     const bannerTotalEl = document.getElementById('bannerTotal');
     const bannerPresentEl = document.getElementById('bannerPresent');
     const bannerAbsentEl = document.getElementById('bannerAbsent');
@@ -252,7 +347,8 @@ function updateSummary() {
     const bannerExternalOdEl = document.getElementById('bannerExternalOd');
 
     if (bannerDateEl) bannerDateEl.textContent = currentDate || '--';
-    if (bannerTotalEl) bannerTotalEl.textContent = students.length;
+    if (bannerClassEl) bannerClassEl.textContent = currentClass.replace('Class ', '');
+    if (bannerTotalEl) bannerTotalEl.textContent = classFilteredStudents.length;
     if (bannerPresentEl) bannerPresentEl.textContent = present;
     if (bannerAbsentEl) bannerAbsentEl.textContent = absent;
     if (bannerInternalOdEl) bannerInternalOdEl.textContent = internalOd;
@@ -267,11 +363,12 @@ function updateStatusLists() {
 
     if (!absenteesList || !internalOdList || !externalOdList) return;
 
+    const classFilteredStudents = getClassFilteredStudents();
     const absentees = [];
     const internalOds = [];
     const externalOds = [];
 
-    students.forEach(student => {
+    classFilteredStudents.forEach(student => {
         const status = currentAttendance[student.rollNumber] || 'PRESENT';
         if (status === 'ABSENT') absentees.push(student);
         else if (status === 'INTERNAL OD') internalOds.push(student);

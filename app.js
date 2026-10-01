@@ -9,6 +9,7 @@ let editingRollNumber = null;
 const studentForm = document.getElementById('studentForm');
 const rollNumberInput = document.getElementById('rollNumber');
 const studentNameInput = document.getElementById('studentName');
+const classSelect = document.getElementById('classSelect');
 const submitBtn = document.getElementById('submitBtn');
 const cancelBtn = document.getElementById('cancelBtn');
 const errorMessage = document.getElementById('errorMessage');
@@ -18,9 +19,35 @@ const noStudents = document.getElementById('noStudents');
 
 // Initialize app
 function init() {
+    migrateStudentData();
     loadStudents();
     renderStudents();
     attachEventListeners();
+}
+
+// Migrate existing student data to add class field
+function migrateStudentData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return;
+    
+    try {
+        let students = JSON.parse(stored);
+        let needsSave = false;
+        
+        students = students.map(student => {
+            if (!student.class) {
+                needsSave = true;
+                return { ...student, class: 'Class 1' };
+            }
+            return student;
+        });
+        
+        if (needsSave) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+        }
+    } catch (e) {
+        // Invalid data, skip migration
+    }
 }
 
 // Load students from localStorage
@@ -53,13 +80,14 @@ function handleSubmit(e) {
     
     const rollNumber = rollNumberInput.value.trim();
     const studentName = studentNameInput.value.trim();
+    const studentClass = classSelect.value;
     
     // Clear previous error
     errorMessage.textContent = '';
     
     // Validate required fields
-    if (!rollNumber || !studentName) {
-        errorMessage.textContent = 'Both fields are required.';
+    if (!rollNumber || !studentName || !studentClass) {
+        errorMessage.textContent = 'All fields are required.';
         return;
     }
     
@@ -78,14 +106,14 @@ function handleSubmit(e) {
         // Update existing student
         const index = students.findIndex(s => s.rollNumber === editingRollNumber);
         if (index !== -1) {
-            students[index] = { rollNumber, name: studentName };
+            students[index] = { rollNumber, name: studentName, class: studentClass };
         }
         editingRollNumber = null;
         submitBtn.textContent = 'Add Student';
         cancelBtn.classList.add('hidden');
     } else {
         // Add new student
-        students.push({ rollNumber, name: studentName });
+        students.push({ rollNumber, name: studentName, class: studentClass });
     }
     
     saveStudents();
@@ -111,6 +139,7 @@ function handleSearch(e) {
 function clearForm() {
     rollNumberInput.value = '';
     studentNameInput.value = '';
+    classSelect.value = 'Class 1';
     errorMessage.textContent = '';
     rollNumberInput.focus();
 }
@@ -145,6 +174,7 @@ function renderStudents(searchQuery = '') {
     studentGrid.innerHTML = filteredStudents.map(student => `
         <div class="student-card">
             <span class="student-name-top">${escapeHtml(student.name)}</span>
+            <span class="student-class-badge">${escapeHtml(student.class || 'Class 1')}</span>
             <div class="student-card-body">
                 <div class="student-roll-large">${escapeHtml(student.rollNumber)}</div>
             </div>
@@ -164,6 +194,7 @@ function editStudent(rollNumber) {
     editingRollNumber = rollNumber;
     rollNumberInput.value = student.rollNumber;
     studentNameInput.value = student.name;
+    classSelect.value = student.class || 'Class 1';
     submitBtn.textContent = 'Update Student';
     cancelBtn.classList.remove('hidden');
     errorMessage.textContent = '';

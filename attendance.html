@@ -22,7 +22,7 @@
                 </div>
                 <div class="banner-row">
                     <span class="banner-label">Class:</span>
-                    <span class="banner-value">1</span>
+                    <span class="banner-value" id="bannerClass">--</span>
                 </div>
                 <div class="banner-divider"></div>
                 <div class="banner-row">
@@ -50,6 +50,12 @@
 
         <section class="date-section">
             <div class="date-selector">
+                <label for="classSelect">Select Class:</label>
+                <select id="classSelect">
+                    <option value="Class 1">Class 1</option>
+                    <option value="Class 2">Class 2</option>
+                    <option value="Class 3">Class 3</option>
+                </select>
                 <label for="attendanceDate">Select Date:</label>
                 <input type="date" id="attendanceDate">
             </div>

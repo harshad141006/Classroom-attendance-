@@ -125,12 +125,28 @@ header h1 {
     display: flex;
     align-items: center;
     gap: 15px;
+    flex-wrap: wrap;
 }
 
 .date-selector label {
     font-weight: 500;
     color: #333;
     font-size: 1.1rem;
+}
+
+#classSelect {
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    background-color: white;
+}
+
+#classSelect:focus {
+    outline: none;
+    border-color: #667eea;
 }
 
 #attendanceDate {
