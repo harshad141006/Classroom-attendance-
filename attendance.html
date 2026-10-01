@@ -106,11 +106,25 @@
                 <ul id="externalOdList" class="status-list"></ul>
             </div>
         </section>
+
+        <!-- WhatsApp Section -->
+        <section class="whatsapp-section">
+            <h2 class="section-title">📱 Generate Report</h2>
+            <div class="whatsapp-actions">
+                <button id="generateMsgBtn" class="btn-gradient">📊 Generate Message</button>
+                <button id="copyMsgBtn" class="btn-glass" disabled>📋 Copy to WhatsApp</button>
+            </div>
+            <div id="whatsappPreview" class="whatsapp-preview hidden">
+                <pre id="whatsappText"></pre>
+            </div>
+            <div id="copyToast" class="copy-toast hidden">✅ Copied to clipboard!</div>
+        </section>
     </div>
 
     <!-- Status Selection Modal -->
     <div id="statusModal" class="modal hidden">
         <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">✕</button>
             <h3>Select Status</h3>
             <div class="modal-student-info">
                 <span id="modalRollNumber"></span> - <span id="modalStudentName"></span>
