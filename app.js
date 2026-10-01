@@ -144,10 +144,7 @@ function renderStudents(searchQuery = '') {
     // Render student cards
     studentGrid.innerHTML = filteredStudents.map(student => `
         <div class="student-card">
-            <div class="student-card-header">
-                <span class="student-roll-small">${escapeHtml(student.rollNumber)}</span>
-                <span class="student-name-top">${escapeHtml(student.name)}</span>
-            </div>
+            <span class="student-name-top">${escapeHtml(student.name)}</span>
             <div class="student-card-body">
                 <div class="student-roll-large">${escapeHtml(student.rollNumber)}</div>
             </div>
