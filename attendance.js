@@ -40,6 +40,7 @@ function init() {
         loadAttendance();
         renderAttendance();
         updateSummary();
+        updateAttendanceSummary();
         updateStatusLists();
     }
 }
@@ -69,10 +70,16 @@ function migrateData() {
         }
     }
     
+    // NOTE: Attendance records are intentionally immutable per class.
+    // If a student moves between classes, their historical attendance stays
+    // under the original class key. This is expected behaviour, not a bug.
+    
     // 2. Migrate attendance data from old format to class-specific format
     const allKeys = Object.keys(localStorage);
     const oldAttendancePattern = /^attendance_(\d{4}-\d{2}-\d{2})$/;
     
+    // Two-pass: collect keys first, then mutate — avoids iterating a live collection
+    const keysToDelete = [];
     allKeys.forEach(key => {
         const match = key.match(oldAttendancePattern);
         if (match) {
@@ -85,10 +92,12 @@ function migrateData() {
                 localStorage.setItem(newKey, value);
             }
             
-            // Remove old key
-            localStorage.removeItem(key);
+            // Collect old key for deletion
+            keysToDelete.push(key);
         }
     });
+    // Delete old keys in a separate pass
+    keysToDelete.forEach(key => localStorage.removeItem(key));
 }
 
 // Load students from localStorage
@@ -145,6 +154,7 @@ function handleClassChange(e) {
         loadAttendance();
         renderAttendance();
         updateSummary();
+        updateAttendanceSummary();
         updateStatusLists();
     }
 }
@@ -155,6 +165,7 @@ function handleDateChange(e) {
     loadAttendance();
     renderAttendance();
     updateSummary();
+    updateAttendanceSummary();
     updateStatusLists();
 }
 
@@ -242,6 +253,9 @@ function showNoStudents() {
     internalOdCount.textContent = '0';
     externalOdCount.textContent = '0';
     
+    // Reset banner summary
+    updateAttendanceSummary();
+    
     // Clear status lists
     updateStatusLists();
 }
@@ -272,6 +286,7 @@ function handleStatusSelect(e) {
         saveAttendance();
         renderAttendance();
         updateSummary();
+        updateAttendanceSummary();
         updateStatusLists();
         closeModal();
     }
@@ -396,6 +411,58 @@ function updateStatusLists() {
     renderList(externalOdList, externalOds);
 }
 
+// Update attendance banner summary
+function updateAttendanceSummary() {
+    const bannerDate = document.getElementById('bannerDate');
+    const bannerTotal = document.getElementById('bannerTotal');
+    const bannerPresent = document.getElementById('bannerPresent');
+    const bannerAbsent = document.getElementById('bannerAbsent');
+    const bannerInternalOd = document.getElementById('bannerInternalOd');
+    const bannerExternalOd = document.getElementById('bannerExternalOd');
+    
+    // Set the date
+    bannerDate.textContent = currentDate || '--';
+    
+    if (students.length === 0) {
+        bannerTotal.textContent = '0';
+        bannerPresent.textContent = '0';
+        bannerAbsent.textContent = '0';
+        bannerInternalOd.textContent = '0';
+        bannerExternalOd.textContent = '0';
+        return;
+    }
+    
+    let present = 0;
+    let absent = 0;
+    let internalOd = 0;
+    let externalOd = 0;
+    
+    students.forEach(student => {
+        const status = currentAttendance[student.rollNumber] || 'PRESENT';
+        
+        switch (status) {
+            case 'PRESENT':
+                present++;
+                break;
+            case 'ABSENT':
+                absent++;
+                break;
+            case 'INTERNAL OD':
+                internalOd++;
+                break;
+            case 'EXTERNAL OD':
+                externalOd++;
+                break;
+        }
+    });
+    
+    bannerTotal.textContent = students.length;
+    bannerPresent.textContent = present;
+    bannerAbsent.textContent = absent;
+    bannerInternalOd.textContent = internalOd;
+    bannerExternalOd.textContent = externalOd;
+}
+
 // Escape HTML to prevent XSS
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -405,3 +472,92 @@ function escapeHtml(text) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', init);
+
+// WhatsApp Message Generation
+function generateWhatsAppMessage() {
+    const classFilteredStudents = getClassFilteredStudents();
+    const absentees = [];
+    const internalOds = [];
+    const externalOds = [];
+    let present = 0;
+    
+    classFilteredStudents.forEach(student => {
+        const status = currentAttendance[student.rollNumber] || 'PRESENT';
+        if (status === 'ABSENT') absentees.push(student);
+        else if (status === 'INTERNAL OD') internalOds.push(student);
+        else if (status === 'EXTERNAL OD') externalOds.push(student);
+        else present++;
+    });
+    
+    const sortByRoll = (a, b) => a.rollNumber.localeCompare(b.rollNumber, undefined, { numeric: true, sensitivity: 'base' });
+    absentees.sort(sortByRoll);
+    internalOds.sort(sortByRoll);
+    externalOds.sort(sortByRoll);
+    
+    let msg = `📊 ATTENDANCE UPDATE\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📅 Date: ${currentDate}\n`;
+    msg += `🏫 Class: ${currentClass.replace('Class ', '')}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `👥 Total: ${classFilteredStudents.length}\n`;
+    msg += `✅ Present: ${present}\n`;
+    msg += `❌ Absent: ${absentees.length}\n`;
+    msg += `🟡 Internal OD: ${internalOds.length}\n`;
+    msg += `🔵 External OD: ${externalOds.length}\n`;
+    
+    if (absentees.length > 0) {
+        msg += `\n❌ ABSENTEES\n`;
+        absentees.forEach(s => { msg += `• ${s.rollNumber} - ${s.name}\n`; });
+    }
+    if (internalOds.length > 0) {
+        msg += `\n🟡 INTERNAL OD\n`;
+        internalOds.forEach(s => { msg += `• ${s.rollNumber} - ${s.name}\n`; });
+    }
+    if (externalOds.length > 0) {
+        msg += `\n🔵 EXTERNAL OD\n`;
+        externalOds.forEach(s => { msg += `• ${s.rollNumber} - ${s.name}\n`; });
+    }
+    
+    return msg;
+}
+
+function initWhatsAppSection() {
+    const generateBtn = document.getElementById('generateMsgBtn');
+    const copyBtn = document.getElementById('copyMsgBtn');
+    const preview = document.getElementById('whatsappPreview');
+    const textEl = document.getElementById('whatsappText');
+    const toast = document.getElementById('copyToast');
+    
+    if (!generateBtn) return;
+    
+    generateBtn.addEventListener('click', () => {
+        const msg = generateWhatsAppMessage();
+        textEl.textContent = msg;
+        preview.classList.remove('hidden');
+        copyBtn.disabled = false;
+        preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    
+    copyBtn.addEventListener('click', () => {
+        const msg = textEl.textContent;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(msg).then(() => showCopyToast(toast));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = msg;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showCopyToast(toast);
+        }
+    });
+}
+
+function showCopyToast(toast) {
+    if (!toast) return;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 2500);
+}
+
+document.addEventListener('DOMContentLoaded', initWhatsAppSection);

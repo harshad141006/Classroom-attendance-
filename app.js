@@ -91,7 +91,8 @@ function handleSubmit(e) {
         return;
     }
     
-    // Check for duplicate roll number (skip if editing the same student)
+    // Roll numbers are globally unique across all classes by design.
+    // If per-class uniqueness is ever needed, add: && s.class === studentClass
     const duplicate = students.find(s => 
         s.rollNumber.toLowerCase() === rollNumber.toLowerCase() && 
         s.rollNumber !== editingRollNumber
