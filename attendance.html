@@ -13,6 +13,41 @@
             <a href="index.html" class="back-link">← Back to Student Management</a>
         </header>
 
+        <section class="attendance-update-banner">
+            <div class="banner-title">📊 ATTENDANCE UPDATE</div>
+            <div class="banner-body">
+                <div class="banner-row">
+                    <span class="banner-label">Date:</span>
+                    <span class="banner-value" id="bannerDate">--</span>
+                </div>
+                <div class="banner-row">
+                    <span class="banner-label">Class:</span>
+                    <span class="banner-value">1</span>
+                </div>
+                <div class="banner-divider"></div>
+                <div class="banner-row">
+                    <span class="banner-label">Total Students:</span>
+                    <span class="banner-value" id="bannerTotal">0</span>
+                </div>
+                <div class="banner-row banner-present">
+                    <span class="banner-label">Present:</span>
+                    <span class="banner-value" id="bannerPresent">0</span>
+                </div>
+                <div class="banner-row banner-absent">
+                    <span class="banner-label">Absent:</span>
+                    <span class="banner-value" id="bannerAbsent">0</span>
+                </div>
+                <div class="banner-row banner-internal-od">
+                    <span class="banner-label">Internal OD:</span>
+                    <span class="banner-value" id="bannerInternalOd">0</span>
+                </div>
+                <div class="banner-row banner-external-od">
+                    <span class="banner-label">External OD:</span>
+                    <span class="banner-value" id="bannerExternalOd">0</span>
+                </div>
+            </div>
+        </section>
+
         <section class="date-section">
             <div class="date-selector">
                 <label for="attendanceDate">Select Date:</label>
@@ -47,6 +82,22 @@
             <div id="attendanceGrid" class="attendance-grid"></div>
             <div id="noStudents" class="no-students hidden">
                 No students found. <a href="index.html">Add students</a> in Student Management first.
+            </div>
+        </section>
+
+        <!-- Status Lists Section -->
+        <section class="status-lists-section">
+            <div class="status-list-block">
+                <h2 class="status-list-header absentees-header">❌ ABSENTEES</h2>
+                <ul id="absenteesList" class="status-list"></ul>
+            </div>
+            <div class="status-list-block">
+                <h2 class="status-list-header internal-od-header">🟡 INTERNAL OD</h2>
+                <ul id="internalOdList" class="status-list"></ul>
+            </div>
+            <div class="status-list-block">
+                <h2 class="status-list-header external-od-header">🔵 EXTERNAL OD</h2>
+                <ul id="externalOdList" class="status-list"></ul>
             </div>
         </section>
     </div>

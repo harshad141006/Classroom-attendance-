@@ -36,6 +36,7 @@ function init() {
         loadAttendance();
         renderAttendance();
         updateSummary();
+        updateStatusLists();
     }
 }
 
@@ -82,6 +83,7 @@ function handleDateChange(e) {
     loadAttendance();
     renderAttendance();
     updateSummary();
+    updateStatusLists();
 }
 
 // Load attendance for current date
@@ -164,6 +166,9 @@ function showNoStudents() {
     absentCount.textContent = '0';
     internalOdCount.textContent = '0';
     externalOdCount.textContent = '0';
+    
+    // Clear status lists
+    updateStatusLists();
 }
 
 // Open status selection modal
@@ -192,6 +197,7 @@ function handleStatusSelect(e) {
         saveAttendance();
         renderAttendance();
         updateSummary();
+        updateStatusLists();
         closeModal();
     }
 }
@@ -236,6 +242,61 @@ function updateSummary() {
     absentCount.textContent = absent;
     internalOdCount.textContent = internalOd;
     externalOdCount.textContent = externalOd;
+    
+    // Also update the banner
+    const bannerDateEl = document.getElementById('bannerDate');
+    const bannerTotalEl = document.getElementById('bannerTotal');
+    const bannerPresentEl = document.getElementById('bannerPresent');
+    const bannerAbsentEl = document.getElementById('bannerAbsent');
+    const bannerInternalOdEl = document.getElementById('bannerInternalOd');
+    const bannerExternalOdEl = document.getElementById('bannerExternalOd');
+
+    if (bannerDateEl) bannerDateEl.textContent = currentDate || '--';
+    if (bannerTotalEl) bannerTotalEl.textContent = students.length;
+    if (bannerPresentEl) bannerPresentEl.textContent = present;
+    if (bannerAbsentEl) bannerAbsentEl.textContent = absent;
+    if (bannerInternalOdEl) bannerInternalOdEl.textContent = internalOd;
+    if (bannerExternalOdEl) bannerExternalOdEl.textContent = externalOd;
+}
+
+// Update status lists for ABSENT, INTERNAL OD, EXTERNAL OD
+function updateStatusLists() {
+    const absenteesList = document.getElementById('absenteesList');
+    const internalOdList = document.getElementById('internalOdList');
+    const externalOdList = document.getElementById('externalOdList');
+
+    if (!absenteesList || !internalOdList || !externalOdList) return;
+
+    const absentees = [];
+    const internalOds = [];
+    const externalOds = [];
+
+    students.forEach(student => {
+        const status = currentAttendance[student.rollNumber] || 'PRESENT';
+        if (status === 'ABSENT') absentees.push(student);
+        else if (status === 'INTERNAL OD') internalOds.push(student);
+        else if (status === 'EXTERNAL OD') externalOds.push(student);
+    });
+
+    // Sort each list by roll number
+    const sortByRoll = (a, b) => a.rollNumber.localeCompare(b.rollNumber, undefined, { numeric: true, sensitivity: 'base' });
+    absentees.sort(sortByRoll);
+    internalOds.sort(sortByRoll);
+    externalOds.sort(sortByRoll);
+
+    function renderList(ul, arr) {
+        if (arr.length === 0) {
+            ul.innerHTML = '<li class="status-list-none">None</li>';
+        } else {
+            ul.innerHTML = arr.map(s =>
+                `<li class="status-list-item">&#8226; ${escapeHtml(s.rollNumber)} - ${escapeHtml(s.name)}</li>`
+            ).join('');
+        }
+    }
+
+    renderList(absenteesList, absentees);
+    renderList(internalOdList, internalOds);
+    renderList(externalOdList, externalOds);
 }
 
 // Escape HTML to prevent XSS
