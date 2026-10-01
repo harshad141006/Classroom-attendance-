@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Dashboard</title>
+    <link rel="stylesheet" href="attendance.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Attendance Dashboard</h1>
+            <a href="index.html" class="back-link">← Back to Student Management</a>
+        </header>
+
+        <section class="date-section">
+            <div class="date-selector">
+                <label for="attendanceDate">Select Date:</label>
+                <input type="date" id="attendanceDate">
+            </div>
+        </section>
+
+        <section class="summary-section">
+            <div class="summary-card">
+                <div class="summary-label">Total Students</div>
+                <div class="summary-value" id="totalCount">0</div>
+            </div>
+            <div class="summary-card present">
+                <div class="summary-label">Present</div>
+                <div class="summary-value" id="presentCount">0</div>
+            </div>
+            <div class="summary-card absent">
+                <div class="summary-label">Absent</div>
+                <div class="summary-value" id="absentCount">0</div>
+            </div>
+            <div class="summary-card internal-od">
+                <div class="summary-label">Internal OD</div>
+                <div class="summary-value" id="internalOdCount">0</div>
+            </div>
+            <div class="summary-card external-od">
+                <div class="summary-label">External OD</div>
+                <div class="summary-value" id="externalOdCount">0</div>
+            </div>
+        </section>
+
+        <section class="attendance-section">
+            <div id="attendanceGrid" class="attendance-grid"></div>
+            <div id="noStudents" class="no-students hidden">
+                No students found. <a href="index.html">Add students</a> in Student Management first.
+            </div>
+        </section>
+    </div>
+
+    <!-- Status Selection Modal -->
+    <div id="statusModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Select Status</h3>
+            <div class="modal-student-info">
+                <span id="modalRollNumber"></span> - <span id="modalStudentName"></span>
+            </div>
+            <div class="status-buttons">
+                <button class="status-btn present-btn" data-status="PRESENT">PRESENT</button>
+                <button class="status-btn absent-btn" data-status="ABSENT">ABSENT</button>
+                <button class="status-btn internal-od-btn" data-status="INTERNAL OD">INTERNAL OD</button>
+                <button class="status-btn external-od-btn" data-status="EXTERNAL OD">EXTERNAL OD</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="attendance.js"></script>
+</body>
+</html>
