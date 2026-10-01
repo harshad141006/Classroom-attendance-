@@ -220,9 +220,14 @@ function renderAttendance() {
         return;
     }
     
+    // Sort by roll number
+    const sortedStudents = classFilteredStudents.sort((a, b) => {
+        return a.rollNumber.localeCompare(b.rollNumber, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    
     noStudents.classList.add('hidden');
     
-    attendanceGrid.innerHTML = classFilteredStudents.map(student => {
+    attendanceGrid.innerHTML = sortedStudents.map(student => {
         const status = currentAttendance[student.rollNumber] || 'PRESENT';
         const statusClass = status.replace(' ', '-');
         

@@ -157,6 +157,11 @@ function renderStudents(searchQuery = '') {
         );
     }
     
+    // Sort by roll number
+    filteredStudents.sort((a, b) => {
+        return a.rollNumber.localeCompare(b.rollNumber, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    
     // Show/hide no students message
     if (filteredStudents.length === 0) {
         studentGrid.innerHTML = '';

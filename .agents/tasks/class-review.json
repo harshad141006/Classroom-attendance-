@@ -1,0 +1,10 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "localStorage mutation during iteration — migrateData() in attendance.js deletes keys while iterating Object.keys(localStorage), which works but is fragile. Collect keys to delete first, then remove them in a separate pass.",
+    "Duplicate UI elements on student cards — Both student-name-top and student-class-badge are positioned at top: 12px; right: 12px, causing them to overlap. Reposition the class badge below the name or to the left.",
+    "Missing validation on edit prevents class changes from failing — When editing a student, if the user changes the class but keeps a roll number that conflicts with an existing student in the target class, the duplicate check passes because it only checks roll number uniqueness across all classes. The check should scope to the target class.",
+    "Orphaned attendance records when students move classes — If a student is moved from one class to another, their old attendance records remain in localStorage under the original class keys, cluttering storage. Consider cleaning up attendance records for students no longer in a class, or document that class changes don't retroactively affect historical attendance."
+  ],
+  "reviewDoc": "c:\\Users\\PREETHA\\Desktop\\class attendance\\.agents\\tasks\\class-review.md"
+}
